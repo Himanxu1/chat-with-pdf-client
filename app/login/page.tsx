@@ -14,29 +14,21 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const result = await axios.post("http://localhost:3001/api/v1/auth/login", {
-      email,
-      password,
-    });
-
-    console.log(result);
-    if (result.status) {
-      router.push("/");
-    }
-    localStorage.setItem("token", result.data.token);
-
     setIsLoading(true);
+
+    login(email, password);
     setIsLoading(false);
   };
 
