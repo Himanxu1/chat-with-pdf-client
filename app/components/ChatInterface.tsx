@@ -17,7 +17,10 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatInterface = () => {
+export const isBrowser = (): boolean => {
+  return typeof window !== "undefined";
+};
+const ChatInterface = ({ chatId }: { chatId: string }) => {
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -41,13 +44,17 @@ const ChatInterface = () => {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setInput("");
-    const token = localStorage.getItem("token");
+    let token;
+    if (isBrowser()) {
+      token = localStorage.getItem("token");
+    }
 
     try {
       const response = await axios.post(
         "http://localhost:3001/api/v1/chat",
         {
           question: input.trim(),
+          chatId,
         },
         {
           headers: {

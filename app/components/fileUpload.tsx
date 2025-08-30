@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { isBrowser } from "./ChatInterface";
 
-const FileUpload = () => {
+const FileUpload = ({ chatId }: { chatId: string }) => {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -20,7 +21,11 @@ const FileUpload = () => {
         setIsUploading(true);
         const formData = new FormData();
         formData.append("pdf", file);
-        const token: string = localStorage.getItem("token") ?? "";
+        formData.append("chatId", chatId);
+        let token;
+        if (isBrowser()) {
+          token = localStorage.getItem("token") ?? "";
+        }
 
         try {
           const response = await fetch(

@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { isBrowser } from "../components/ChatInterface";
 
 export interface AuthContextType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // simulate token persistence
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    let storedUser;
+    if (isBrowser()) {
+      storedUser = localStorage.getItem("user");
+    }
+
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -40,8 +45,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log(data);
       setUser(data.user);
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (isBrowser()) {
+      }
+      if (isBrowser()) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+
       if (data.status) {
         router.push("/");
       }
@@ -52,7 +62,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+
+    if (isBrowser()) {
+      localStorage.removeItem("user");
+    }
   };
 
   return (
