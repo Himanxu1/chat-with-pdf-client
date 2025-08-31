@@ -4,8 +4,8 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "./context/AuthContext";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./components/Sidebar";
+
+import { MotionWrapper } from "./components/MotionWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,13 +34,9 @@ export default function RootLayout({
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
-            <SidebarProvider style={{ marginTop: "20px" }}>
-              <AppSidebar />
-              <SidebarTrigger size={"lg"} />
-              <section className="flex items-center justify-between  "></section>
-              <div className=" w-full bg-background  p-4">{children}</div>
-              <Toaster />
-            </SidebarProvider>
+            <section className="flex items-center justify-between"></section>
+            <MotionWrapper>{children}</MotionWrapper>
+            <Toaster />
           </body>
         </html>
       </AuthProvider>

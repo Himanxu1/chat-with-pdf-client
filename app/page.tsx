@@ -1,7 +1,27 @@
+"use client";
+
+import { useState } from "react";
+import { useAuth } from "./context/AuthContext";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "./components/Sidebar";
+import { Nav } from "./components/Landing/nav";
+import { Hero } from "./components/Landing/hero";
+import { Features } from "./components/Landing/features";
+import { Steps } from "./components/Landing/steps";
+import { Pricing } from "./components/Landing/pricing";
+import { FAQ } from "./components/Landing/faq";
+import { Footer } from "./components/Landing/footer";
+
 export default function Home() {
   return (
-    <div className="flex items-center justify-center">
-      <h1>This is need to be filled with bhang bhosda </h1>
+    <div>
+      <Nav />
+      <Hero />
+      <Features />
+      <Steps />
+      <Pricing />
+      <FAQ />
+      <Footer />
     </div>
   );
 }

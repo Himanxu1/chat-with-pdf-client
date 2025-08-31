@@ -1,10 +1,19 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+// middleware.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default clerkMiddleware();
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get("token")?.value;
+
+  if (["/chat"].some((route) => req.nextUrl.pathname.startsWith(route))) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/profile/:path*", "/chat/:path*"],
 };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
 import axios from "axios";
@@ -9,12 +10,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { docco } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 interface Message {
   id: string;
   content: string;
-  role: "user" | "assistant";
-  timestamp: Date;
+  role: "user" | "assistant"; // Added role to differentiate messages
+  createdAt: Date; // Changed timestamp to createdAt to match backend schema
 }
 
 export const isBrowser = (): boolean => {
@@ -25,6 +31,37 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!chatId) return;
+
+      setIsLoading(true);
+      let token;
+      if (isBrowser()) {
+        token = localStorage.getItem("token");
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/v1/chat/${chatId}/messages`,
+          {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Failed to fetch chat messages:", error);
+        toast.error("Failed to load chat history.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [chatId]);
 
   const canSend = useMemo(
     () => input.trim().length > 0 && !isLoading,
@@ -38,7 +75,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
       id: Date.now().toString(),
       content: input.trim(),
       role: "user",
-      timestamp: new Date(),
+      createdAt: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -69,7 +106,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
           response.data.answer ??
           "I couldn't process your request. Please try again.",
         role: "assistant",
-        timestamp: new Date(),
+        createdAt: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -80,7 +117,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I encountered an error. Please try again.",
         role: "assistant",
-        timestamp: new Date(),
+        createdAt: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
       toast.error("Failed to get response. Please try again.");
@@ -106,8 +143,27 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
     [handleSubmit]
   );
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: Date) => {
+    const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const CodeBlock = ({ inline, className, children, ...props }: any) => {
+    const match = /language-(\w+)/.exec(className || "");
+    return !inline && match ? (
+      <SyntaxHighlighter
+        // eslint-disable-next-line react/no-children-prop
+        children={String(children).replace(/\n$/, "")}
+        style={docco}
+        language={match[1]}
+        PreTag="div"
+        {...props}
+      />
+    ) : (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
   };
 
   return (
@@ -137,7 +193,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <ScrollArea className="flex-1 p-4 min-h-0" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.length === 0 && !isLoading && (
               <div className="text-center py-12">
@@ -182,16 +238,29 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
                         : "bg-gray-100 text-gray-900 border border-gray-200"
                     }`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                    {message.role === "assistant" ? (
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap prose prose-sm max-w-none">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code: CodeBlock,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    )}
                   </div>
                   <div
                     className={`text-xs text-gray-400 mt-1 ${
                       message.role === "user" ? "text-right" : "text-left"
                     }`}
                   >
-                    {formatTime(message.timestamp)}
+                    {formatTime(message.createdAt)}
                   </div>
                 </div>
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { ChevronUp, Plus, User2, Users } from "lucide-react";
+import { ChevronUp, Plus, User2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,32 +19,29 @@ import {
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
-  const [userChats, setUserChats] = useState([]);
+  const [userChats, setUserChats] = useState<any[]>([]);
   const [token, setToken] = useState("");
   const [userProfile, setUserProfile] = useState<any>(null);
 
   console.log(userProfile, "user");
   const router = useRouter();
+  const params = useParams();
+  const activeChatId = params.slug as string;
+
   const handleSignOut = () => {
     logout();
-    router.push("/login");
+    router.push("/");
   };
 
-  /***
-   *   api call to get the existing chat with the pdf id and user id and chat id so
-   *   that the context should be the same
-   */
   const handleAddChat = async () => {
     if (!userProfile?.id || !token) return;
-    // make an api request to create a chat and this will return the chatId we need to store it somewhere to user it for params
-    // to get the chat .
 
     const response = await axios.post(
       "http://localhost:3001/api/v1/chat/new",
@@ -58,9 +55,13 @@ export function AppSidebar() {
       }
     );
     console.log(response);
+
+    const newChat = response.data;
+    setUserChats((prevChats: any) => [newChat, ...prevChats]);
+    router.push(`/chat/${newChat.id}`);
   };
 
-  const fetchChats = async () => {
+  const fetchChats = useCallback(async () => {
     if (!userProfile?.id || !token) return;
     const result = await axios.get(
       `http://localhost:3001/api/v1/chat/user/${user?.id}`,
@@ -71,14 +72,13 @@ export function AppSidebar() {
       }
     );
     setUserChats(result.data);
-  };
+  }, [userProfile, token, user?.id]);
 
   const handleChatClick = (id: string) => {
     router.push(`/chat/${id}`);
   };
 
   useEffect(() => {
-    console.log("first");
     if (typeof window !== "undefined" && window.localStorage) {
       const token = localStorage.getItem("token") || "";
       const user = JSON.parse(localStorage.getItem("user") || "");
@@ -89,9 +89,8 @@ export function AppSidebar() {
   }, []);
 
   useEffect(() => {
-    console.log("secon");
     fetchChats();
-  }, [userProfile, token]);
+  }, [userProfile, token, fetchChats]);
 
   return (
     <Sidebar>
@@ -102,11 +101,20 @@ export function AppSidebar() {
             <Button className="mt-10 p-4" onClick={handleAddChat}>
               <Plus /> Add Chat
             </Button>
-            <SidebarMenu className="mt-6">
-              {userChats.map((item: any) => (
-                <SidebarMenuItem key={item.id}>
+            <SidebarMenu className="mt-6 cursor-pointer">
+              {userChats.map((item: any, index: number) => (
+                <SidebarMenuItem
+                  key={item.id}
+                  className={
+                    item.id === activeChatId
+                      ? "bg-gray-200 dark:bg-gray-700"
+                      : ""
+                  }
+                >
                   <SidebarMenuButton asChild>
-                    <h1 onClick={() => handleChatClick(item.id)}>{item.id}</h1>
+                    <h1 onClick={() => handleChatClick(item.id)}>{`Chat ${
+                      index + 1
+                    }`}</h1>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
