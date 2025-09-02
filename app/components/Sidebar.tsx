@@ -29,6 +29,7 @@ export function AppSidebar() {
   const [userChats, setUserChats] = useState<any[]>([]);
   const [token, setToken] = useState("");
   const [userProfile, setUserProfile] = useState<any>(null);
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
 
   const router = useRouter();
   const params = useParams();
@@ -43,7 +44,7 @@ export function AppSidebar() {
     if (!userProfile?.id || !token) return;
 
     const response = await axios.post(
-      "http://localhost:3001/api/v1/chat/new",
+      `${BASE_URL}/api/v1/chat/new`,
       {
         userId: user.id,
       },
@@ -61,27 +62,21 @@ export function AppSidebar() {
 
   const fetchChats = useCallback(async () => {
     if (!userProfile?.id || !token) return;
-    const result = await axios.get(
-      `http://localhost:3001/api/v1/chat/user/${user?.id}`,
-      {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const result = await axios.get(`${BASE_URL}/api/v1/chat/user/${user?.id}`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
     setUserChats(result.data);
   }, [userProfile, token, user?.id]);
 
   const handlePayment = async () => {
     // 1. Create order on backend
-    const res = await fetch(
-      "http://localhost:3001/api/v1/payment/create-order",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 500 }),
-      }
-    );
+    const res = await fetch(`${BASE_URL}/api/v1/payment/create-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: 500 }),
+    });
     const order = await res.json();
 
     // 2. Razorpay options
@@ -95,7 +90,7 @@ export function AppSidebar() {
       handler: async function (response: any) {
         // 3. Verify payment
         const verifyRes = await fetch(
-          "http://localhost:3001/api/v1/payment/verify-payment",
+          `${BASE_URL}/api/v1/payment/verify-payment`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

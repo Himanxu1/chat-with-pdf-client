@@ -21,6 +21,7 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
 
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,14 +31,11 @@ const Signup = () => {
       console.log("All fields are required");
     }
 
-    const result = await axios.post(
-      "http://localhost:3001/api/v1/auth/register",
-      {
-        email,
-        password,
-        username: name,
-      }
-    );
+    const result = await axios.post(`${BASE_URL}/api/v1/auth/register`, {
+      email,
+      password,
+      username: name,
+    });
 
     console.log(result);
     if (result.status) {

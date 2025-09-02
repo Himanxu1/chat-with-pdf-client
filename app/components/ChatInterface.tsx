@@ -31,6 +31,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -44,7 +45,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
 
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/v1/chat/${chatId}/messages`,
+          `${BASE_URL}/api/v1/chat/${chatId}/messages`,
           {
             headers: {
               authorization: `Bearer ${token}`,
@@ -88,7 +89,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/v1/chat",
+        `${BASE_URL}/api/v1/chat`,
         {
           question: input.trim(),
           chatId,

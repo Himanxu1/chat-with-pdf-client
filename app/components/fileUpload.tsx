@@ -10,6 +10,7 @@ import { isBrowser } from "./ChatInterface";
 const FileUpload = ({ chatId }: { chatId: string }) => {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
 
   const handleUpload = () => {
     const el = document.createElement("input");
@@ -28,16 +29,13 @@ const FileUpload = ({ chatId }: { chatId: string }) => {
         }
 
         try {
-          const response = await fetch(
-            "http://localhost:3001/api/v1/chat/pdf",
-            {
-              method: "POST",
-              body: formData,
-              headers: {
-                authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await fetch(`${BASE_URL}/api/v1/chat/pdf`, {
+            method: "POST",
+            body: formData,
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          });
 
           if (!response.ok) {
             throw new Error(`Upload failed: ${response.statusText}`);

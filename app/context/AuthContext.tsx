@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
 
   // simulate token persistence
   useEffect(() => {
@@ -36,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Example API call
       const { data } = await axios.post(
-        "http://localhost:3001/api/v1/auth/login",
+        `${BASE_URL}/api/v1/auth/login`,
         {
           email,
           password,
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/v1/auth/logout", {
+      const res = await axios.get(`${BASE_URL}/api/v1/auth/logout`, {
         withCredentials: true,
       });
 
