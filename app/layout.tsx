@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-sync-scripts */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -34,6 +35,9 @@ export default function RootLayout({
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
+            <head>
+              {/* <script src="https://checkout.razorpay.com/v1/checkout.js"></script> */}
+            </head>
             <section className="flex items-center justify-between"></section>
             <MotionWrapper>{children}</MotionWrapper>
             <Toaster />

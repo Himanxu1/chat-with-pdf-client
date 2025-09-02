@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function Hero() {
+  const router = useRouter();
   return (
     <section className="border-b">
       <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 md:grid-cols-2 md:py-16">
@@ -13,13 +16,13 @@ export function Hero() {
             citations, summaries, and key insights—fast, accurate, and secure.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3" id="try">
-            <Button>Try it free</Button>
-            <Button
-              variant="outline"
+            <Button onClick={() => router.push("/login")}>Try it free</Button>
+            <Link
+              href="#pricing"
               className="border-accent text-foreground hover:bg-accent/10 bg-transparent"
             >
               View pricing
-            </Button>
+            </Link>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Free plan includes 3 PDF chats. No credit card required.

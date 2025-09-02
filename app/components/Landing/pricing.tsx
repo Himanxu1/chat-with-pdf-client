@@ -6,8 +6,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export function Pricing() {
+  const router = useRouter();
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <div className="mx-auto max-w-2xl text-center">
@@ -36,7 +38,12 @@ export function Pricing() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Get started</Button>
+            <Button
+              className="w-full cursor-pointer"
+              onClick={() => router.push("/login")}
+            >
+              Get started
+            </Button>
           </CardFooter>
         </Card>
 

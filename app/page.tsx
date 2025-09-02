@@ -1,9 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth } from "./context/AuthContext";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./components/Sidebar";
 import { Nav } from "./components/Landing/nav";
 import { Hero } from "./components/Landing/hero";
 import { Features } from "./components/Landing/features";
