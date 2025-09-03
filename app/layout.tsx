@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "./context/AuthContext";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MotionWrapper } from "./components/MotionWrapper";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <Analytics />
+      <SpeedInsights />
       <AuthProvider>
         <html lang="en">
           <body
