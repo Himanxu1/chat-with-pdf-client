@@ -38,12 +38,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // simulate token persistence
   useEffect(() => {
     let storedUser;
+    let storedToken;
     if (isBrowser()) {
       storedUser = localStorage.getItem("user");
+      storedToken = localStorage.getItem("token");
     }
 
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      // Ensure cookie is set for middleware
+      if (storedToken) {
+        document.cookie = `token=${storedToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+      }
     }
     setLoading(false);
   }, []);
@@ -56,16 +62,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
       });
 
-      console.log(data);
+      console.log("Login response:", data);
       setUser(data.user);
 
       if (isBrowser()) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        // Set cookie for middleware
+        document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
+        console.log("Token stored in localStorage and cookie set");
       }
 
       if (data.status) {
+        console.log("Login successful, redirecting to /chat");
         router.push("/chat");
+      } else {
+        console.log("Login failed - status is false");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -85,6 +97,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (isBrowser()) {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        // Clear cookie
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     } catch (err) {
       console.log(err);
@@ -93,6 +107,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (isBrowser()) {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        // Clear cookie
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     }
   };

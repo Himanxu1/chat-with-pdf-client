@@ -27,8 +27,13 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    login(email, password);
-    setIsLoading(false);
+    try {
+      await login(email, password);
+    } catch (error) {
+      console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

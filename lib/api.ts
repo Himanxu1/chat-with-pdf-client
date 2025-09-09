@@ -97,6 +97,7 @@ export const apiMethods = {
   // POST request
   post: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.post<ApiResponse<T>>(url, data, config);
+    console.log("API Response:", response.data);
     return (response.data.data || response.data) as T;
   },
 
