@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { MotionWrapper } from "./components/MotionWrapper";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +40,7 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
             <head>
-              {/* <script src="https://checkout.razorpay.com/v1/checkout.js"></script> */}
+              <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             </head>
             <section className="flex items-center justify-between"></section>
             <MotionWrapper>{children}</MotionWrapper>

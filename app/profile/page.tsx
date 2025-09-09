@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -52,10 +51,7 @@ import {
   PasswordStrength,
 } from "@/lib/passwordUtils";
 import { PasswordStrengthIndicator } from "../components/PasswordStrengthIndicator";
-import {
-  handleApiInfo,
-  handleApiSuccess,
-} from "@/lib/errorHandler";
+import { handleApiInfo, handleApiSuccess } from "@/lib/errorHandler";
 import {
   AnalyticsService,
   type UsageAnalytics,
@@ -74,7 +70,6 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
 
-
   const [userInfo, setUserInfo] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -88,7 +83,6 @@ export default function ProfilePage() {
   });
 
   const [isEditMode, setIsEditMode] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] = useState<{
@@ -315,9 +309,10 @@ export default function ProfilePage() {
   };
 
   const handleUpgradePlan = async (plan: Plan) => {
+    setLoading(true);
     try {
-      if (plan.price === 0 || plan.name === "Basic") {
-        // Free plan or Basic plan - just update in database
+      // Only handle Free plan directly without payment
+      if (plan.price === 0) {
         await PaymentService.createSubscription(plan.name);
         handleApiSuccess(
           "Plan Updated",
@@ -328,102 +323,80 @@ export default function ProfilePage() {
         return;
       }
 
-      // Pro plan - create Razorpay subscription
+      // For paid plans (Basic and Pro) - create Razorpay subscription
+      toast.info("Preparing payment...", {
+        description: "Please wait while we set up your payment.",
+        duration: 3000,
+      });
+
       const subscriptionData = await PaymentService.createSubscription(
         plan.name
       );
 
-      // Load Razorpay script dynamically
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => {
-        const options = {
-          key: subscriptionData.key,
-          subscription_id: subscriptionData.subscription_id,
-          name: "ChatPDF",
-          description: `${plan.name} Plan Subscription`,
-          image: "",
-          handler: async (response: {
-            razorpay_payment_id: string;
-            razorpay_subscription_id: string;
-            razorpay_signature: string;
-          }) => {
-            try {
-              console.log("handler");
-              await PaymentService.verifySubscription({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_subscription_id: response.razorpay_subscription_id,
-                razorpay_signature: response.razorpay_signature,
-              });
-              handleApiSuccess(
-                "Payment Successful",
-                `Successfully upgraded to ${plan.name} plan`
-              );
-              setIsUpgradeModalOpen(false);
-              fetchSubscriptionStatus();
-            } catch (error) {
-              console.error("Payment verification failed:", error);
-              toast.error("Payment Verification Failed", {
-                description: "Failed to verify payment. Please try again.",
-                duration: 5000,
-              });
-            }
-          },
-          prefill: {
-            name: user?.firstName + " " + user?.lastName,
-            email: user?.email,
-          },
-          theme: {
-            color: "#000000",
-          },
-          modal: {
-            ondismiss: () => {
-              console.log("Razorpay modal dismissed");
-            },
-          },
-        };
+      if (!subscriptionData.key || !subscriptionData.subscription_id) {
+        throw new Error("Invalid subscription data received");
+      }
 
-        try {
-          const rzp = new (
-            window as typeof window & {
-              Razorpay: new (options: unknown) => {
-                open: () => void;
-                on: (event: string, callback: (response?: { error?: { description?: string } }) => void) => void;
-              };
-            }
-          ).Razorpay(options);
-
-          // Add event listeners for debugging
-          rzp.on("payment.failed", (response?: { error?: { description?: string } }) => {
-            console.error("Payment failed:", response?.error);
-            toast.error("Payment Failed", {
-              description: response?.error?.description || "Payment could not be processed",
+      const options = {
+        key: subscriptionData.key,
+        subscription_id: subscriptionData.subscription_id,
+        name: "ChatPDF",
+        description: `${plan.name} Plan Subscription`,
+        image: "",
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_subscription_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            console.log("handler");
+            await PaymentService.verifySubscription({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            handleApiSuccess(
+              "Payment Successful",
+              `Successfully upgraded to ${plan.name} plan`
+            );
+            setIsUpgradeModalOpen(false);
+            setLoading(false);
+            fetchSubscriptionStatus();
+          } catch (error) {
+            console.error("Payment verification failed:", error);
+            toast.error("Payment Verification Failed", {
+              description: "Failed to verify payment. Please try again.",
               duration: 5000,
             });
-          });
-          setIsUpgradeModalOpen(false); // close your modal
-
-          rzp.open();
-        } catch (error) {
-          console.error("Error opening Razorpay modal:", error);
-          toast.error("Payment Error", {
-            description: "Failed to open payment modal. Please try again.",
-            duration: 5000,
-          });
-        }
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: user?.firstName + " " + user?.lastName,
+          email: user?.email,
+        },
+        theme: {
+          color: "#000000",
+        },
+        modal: {
+          ondismiss: () => {
+            console.log("Razorpay modal dismissed");
+            setLoading(false);
+            toast.info("Payment cancelled", {
+              description: "Payment was cancelled by user.",
+              duration: 3000,
+            });
+          },
+        },
       };
 
-      script.onerror = () => {
-        console.error("Failed to load Razorpay script");
-        toast.error("Payment Gateway Error", {
-          description: "Failed to load payment gateway. Please try again.",
-          duration: 5000,
-        });
-      };
-
-      document.body.appendChild(script);
+      setIsUpgradeModalOpen(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const razor = new (window as any).Razorpay(options);
+      razor.open();
     } catch (error) {
       console.error("Error upgrading plan:", error);
+      setLoading(false);
       toast.error("Upgrade Error", {
         description: "Failed to upgrade plan. Please try again.",
         duration: 5000,
@@ -434,7 +407,7 @@ export default function ProfilePage() {
   const handleCancelSubscription = async () => {
     try {
       await PaymentService.cancelSubscription();
-      fetchSubscriptionStatus(); // Refresh subscription data
+      fetchSubscriptionStatus();
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       toast.error("Cancellation Error", {
@@ -475,25 +448,6 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                console.log(
-                  "[v0] Toggling edit mode. Current mode:",
-                  isEditMode
-                );
-                setIsEditMode(!isEditMode);
-                if (!isEditMode) {
-                  toast.info(
-                    "You can now edit your profile information. Click 'Save Changes' when done."
-                  );
-                }
-              }}
-            >
-              <Edit2 className="mr-2 h-4 w-4" />
-              {isEditMode ? "Cancel Edit" : "Edit Profile"}
-            </Button>
             <Button
               className="bg-black text-white hover:bg-gray-800"
               onClick={() => setIsUpgradeModalOpen(true)}
@@ -561,11 +515,19 @@ export default function ProfilePage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 ">
+            <TabsTrigger value="analytics" className="cursor-pointer">
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="account" className="cursor-pointer">
+              Account
+            </TabsTrigger>
+            <TabsTrigger value="security" className="cursor-pointer">
+              Security
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="cursor-pointer">
+              Billing
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -897,14 +859,34 @@ export default function ProfilePage() {
                     />
                   </div>
                 </div>
-
-                <Button
-                  className="mt-4"
-                  onClick={handleSaveProfile}
-                  disabled={!isEditMode || loading}
-                >
-                  {loading ? "Saving..." : "Save Changes"}
-                </Button>
+                <div className="flex items-center mt-4  ">
+                  <Button
+                    className="cursor-pointer"
+                    onClick={handleSaveProfile}
+                    disabled={!isEditMode || loading}
+                  >
+                    {loading ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button
+                    className="ml-4 cursor-pointer"
+                    variant="outline"
+                    onClick={() => {
+                      console.log(
+                        "[v0] Toggling edit mode. Current mode:",
+                        isEditMode
+                      );
+                      setIsEditMode(!isEditMode);
+                      if (!isEditMode) {
+                        toast.info(
+                          "You can now edit your profile information. Click 'Save Changes' when done."
+                        );
+                      }
+                    }}
+                  >
+                    <Edit2 className="mr-2 h-4 w-4" />
+                    {isEditMode ? "Cancel Edit" : "Edit Profile"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1090,29 +1072,6 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Security Features */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">
-                        Two-Factor Authentication
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security to your account
-                      </p>
-                    </div>
-                    <Switch
-                      checked={twoFactorEnabled}
-                      onCheckedChange={(checked) => {
-                        setTwoFactorEnabled(checked);
-                        handleApiInfo(
-                          checked
-                            ? "Two-factor authentication has been enabled."
-                            : "Two-factor authentication has been disabled."
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
 
                 <Button
                   onClick={handleUpdatePassword}
@@ -1240,18 +1199,18 @@ export default function ProfilePage() {
 
         {/* Upgrade Modal */}
         <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-          <DialogContent className="max-w-full">
+          <DialogContent className="w-[95vw] sm:w-[80vw] sm:max-w-none max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center">
+              <DialogTitle className="text-xl md:text-2xl font-bold text-center">
                 Choose Your Plan
               </DialogTitle>
-              <DialogDescription className="text-center">
+              <DialogDescription className="text-center text-sm md:text-base">
                 Upgrade your subscription to unlock more features and
                 capabilities
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-6 md:grid-cols-3 mt-6">
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-4 md:mt-6">
               {availablePlans.map((plan) => {
                 const isCurrentPlan =
                   currentSubscription?.plan.name === plan.name;
@@ -1264,44 +1223,50 @@ export default function ProfilePage() {
                 return (
                   <Card
                     key={plan.name}
-                    className={`relative ${isPopular ? "border-primary" : ""}`}
+                    className={`relative ${
+                      isPopular ? "border-primary" : ""
+                    } h-full flex flex-col`}
                   >
                     {isPopular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-primary text-primary-foreground px-2 py-1 text-xs">
                           Most Popular
                         </Badge>
                       </div>
                     )}
-                    <CardHeader>
+                    <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        <CardTitle className="text-lg md:text-xl">
+                          {plan.name}
+                        </CardTitle>
                         {isCurrentPlan && (
                           <Badge
                             variant="outline"
-                            className="border-gray-400 text-gray-600"
+                            className="border-gray-400 text-gray-600 text-xs"
                           >
                             Current
                           </Badge>
                         )}
                       </div>
-                      <div className="mt-4">
-                        <span className="text-3xl font-bold">
+                      <div className="mt-2 md:mt-4">
+                        <span className="text-2xl md:text-3xl font-bold">
                           {PaymentService.formatPrice(plan.price)}
                         </span>
-                        <span className="text-muted-foreground">/month</span>
+                        <span className="text-muted-foreground text-sm">
+                          /month
+                        </span>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="text-sm">
                         {plan.name === "Free" && "Perfect for getting started"}
                         {plan.name === "Basic" && "Great for individuals"}
                         {plan.name === "Pro" &&
                           "Best for professionals and teams"}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-black" />
+                    <CardContent className="space-y-3 flex-1 flex flex-col">
+                      <div className="space-y-2 md:space-y-3 flex-1">
+                        <div className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
                             {plan.dailyPdfLimit === -1
                               ? "Unlimited"
@@ -1309,8 +1274,8 @@ export default function ProfilePage() {
                             PDFs per day
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-black" />
+                        <div className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
                             {plan.monthlyPdfLimit === -1
                               ? "Unlimited"
@@ -1318,14 +1283,14 @@ export default function ProfilePage() {
                             PDFs per month
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-black" />
+                        <div className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
                             Up to {plan.maxFileSizeMb} MB file size
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-black" />
+                        <div className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
                             {plan.name === "Pro"
                               ? "1 TB"
@@ -1335,38 +1300,42 @@ export default function ProfilePage() {
                             storage
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-black" />
+                        <div className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                           <span className="text-sm">
                             {plan.name === "Pro" ? "Priority" : "Email"} support
                           </span>
                         </div>
                         {plan.name === "Pro" && (
-                          <div className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-black" />
+                          <div className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-black flex-shrink-0 mt-0.5" />
                             <span className="text-sm">Advanced analytics</span>
                           </div>
                         )}
                       </div>
-                      <Button
-                        className="w-full"
-                        variant={isCurrentPlan ? "outline" : "default"}
-                        disabled={isCurrentPlan || !canUpgrade}
-                        onClick={() => handleUpgradePlan(plan)}
-                      >
-                        {isCurrentPlan
-                          ? "Current Plan"
-                          : canUpgrade
-                          ? `Upgrade to ${plan.name}`
-                          : "Not Available"}
-                      </Button>
+                      <div className="mt-auto pt-4">
+                        <Button
+                          className="w-full text-sm md:text-base"
+                          variant={isCurrentPlan ? "outline" : "default"}
+                          disabled={isCurrentPlan || !canUpgrade || loading}
+                          onClick={() => handleUpgradePlan(plan)}
+                        >
+                          {loading
+                            ? "Processing..."
+                            : isCurrentPlan
+                            ? "Current Plan"
+                            : canUpgrade
+                            ? `Upgrade to ${plan.name}`
+                            : "Not Available"}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
               })}
             </div>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
+            <div className="mt-4 md:mt-6 text-center text-xs md:text-sm text-muted-foreground px-4">
               All plans include a 14-day free trial. Cancel anytime.
             </div>
           </DialogContent>
