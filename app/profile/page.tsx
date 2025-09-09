@@ -129,6 +129,7 @@ export default function ProfilePage() {
   const [currentSubscription, setCurrentSubscription] =
     useState<Subscription | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [refreshingData, setRefreshingData] = useState(false);
   const [availablePlans] = useState<Plan[]>(PaymentService.getAvailablePlans());
 
   const usageStats = {
@@ -142,6 +143,7 @@ export default function ProfilePage() {
   const fetchUserProfile = async () => {
     try {
       const data = await ProfileService.getProfile();
+      console.log("this is data", data);
 
       setUserInfo({
         firstName: data.user.firstName || "",
@@ -195,6 +197,18 @@ export default function ProfilePage() {
       // Error handling is done by the API interceptor
     } finally {
       setSubscriptionLoading(false);
+    }
+  };
+
+  // Helper function to refresh all subscription-related data
+  const refreshAllSubscriptionData = async () => {
+    setRefreshingData(true);
+    try {
+      await Promise.all([fetchSubscriptionStatus(), fetchUserProfile()]);
+    } catch (error) {
+      console.error("Error refreshing subscription data:", error);
+    } finally {
+      setRefreshingData(false);
     }
   };
 
@@ -313,13 +327,16 @@ export default function ProfilePage() {
     try {
       // Only handle Free plan directly without payment
       if (plan.price === 0) {
+        // Optimistic update - immediately update UI
+        setSubscriptionInfo({ plan: plan.name });
+
         await PaymentService.createSubscription(plan.name);
         handleApiSuccess(
           "Plan Updated",
           `Successfully switched to ${plan.name} plan`
         );
         setIsUpgradeModalOpen(false);
-        fetchSubscriptionStatus(); // Refresh subscription data
+        await refreshAllSubscriptionData();
         return;
       }
 
@@ -350,6 +367,11 @@ export default function ProfilePage() {
         }) => {
           try {
             console.log("handler");
+            console.log("this ", response);
+
+            // Optimistic update - immediately update UI
+            setSubscriptionInfo({ plan: plan.name });
+
             await PaymentService.verifySubscription({
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_subscription_id: response.razorpay_subscription_id,
@@ -361,9 +383,11 @@ export default function ProfilePage() {
             );
             setIsUpgradeModalOpen(false);
             setLoading(false);
-            fetchSubscriptionStatus();
+            await refreshAllSubscriptionData();
           } catch (error) {
             console.error("Payment verification failed:", error);
+            // Revert optimistic update on error
+            await refreshAllSubscriptionData();
             toast.error("Payment Verification Failed", {
               description: "Failed to verify payment. Please try again.",
               duration: 5000,
@@ -396,6 +420,8 @@ export default function ProfilePage() {
       razor.open();
     } catch (error) {
       console.error("Error upgrading plan:", error);
+      // Revert optimistic update on error
+      await refreshAllSubscriptionData();
       setLoading(false);
       toast.error("Upgrade Error", {
         description: "Failed to upgrade plan. Please try again.",
@@ -407,7 +433,7 @@ export default function ProfilePage() {
   const handleCancelSubscription = async () => {
     try {
       await PaymentService.cancelSubscription();
-      fetchSubscriptionStatus();
+      await refreshAllSubscriptionData();
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       toast.error("Cancellation Error", {
@@ -442,7 +468,13 @@ export default function ProfilePage() {
                 {userInfo.firstName} {userInfo.lastName}
               </h1>
               <p className="text-muted-foreground">{userInfo.email}</p>
-              <Badge variant="secondary" className="mt-2 bg-black text-white">
+              <Badge
+                variant="secondary"
+                className="mt-2 bg-black text-white flex items-center gap-1"
+              >
+                {refreshingData && (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                )}
                 {subscriptionInfo?.plan || "Free"} Plan
               </Badge>
             </div>
@@ -451,9 +483,10 @@ export default function ProfilePage() {
             <Button
               className="bg-black text-white hover:bg-gray-800"
               onClick={() => setIsUpgradeModalOpen(true)}
+              disabled={refreshingData}
             >
               <CreditCard className="mr-2 h-4 w-4" />
-              Upgrade Plan
+              {refreshingData ? "Updating..." : "Upgrade Plan"}
             </Button>
           </div>
         </div>
