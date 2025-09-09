@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export function Hero() {
   const router = useRouter();
@@ -30,9 +31,11 @@ export function Hero() {
           </p>
         </div>
         <div className="relative">
-          <img
+          <Image
             src="/chat-with-pdf-conversation-ui.png"
             alt="Preview of Chat with PDF conversation UI"
+            width={800}
+            height={600}
             className="w-full rounded-lg border bg-card"
           />
         </div>

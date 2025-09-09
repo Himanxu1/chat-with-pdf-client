@@ -71,7 +71,7 @@ export class PaymentService {
     razorpay_signature: string;
   }): Promise<{ ok: boolean; error?: string }> {
     try {
-      const data = await apiMethods.post("/api/v1/payment/subscription-verify", paymentData);
+      const data = await apiMethods.post<{ ok: boolean; error?: string }>("/api/v1/payment/subscription-verify", paymentData);
       return data;
     } catch (error) {
       console.error("Error verifying subscription:", error);
@@ -84,7 +84,7 @@ export class PaymentService {
    */
   static async cancelSubscription(): Promise<{ ok: boolean }> {
     try {
-      const data = await apiMethods.post("/api/v1/payment/subscription-cancel");
+      const data = await apiMethods.post<{ ok: boolean }>("/api/v1/payment/subscription-cancel");
       handleApiSuccess("Subscription Cancelled", "Your subscription has been cancelled successfully");
       return data;
     } catch (error) {

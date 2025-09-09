@@ -27,7 +27,6 @@ import {
   FileText,
   MessageSquare,
   Settings,
-  Bell,
   Shield,
   CreditCard,
   BarChart3,
@@ -50,10 +49,10 @@ import {
   validatePassword,
   generatePasswordSuggestion,
   PasswordValidationResult,
+  PasswordStrength,
 } from "@/lib/passwordUtils";
 import { PasswordStrengthIndicator } from "../components/PasswordStrengthIndicator";
 import {
-  handleApiError,
   handleApiInfo,
   handleApiSuccess,
 } from "@/lib/errorHandler";
@@ -75,11 +74,6 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    marketing: true,
-  });
 
   const [userInfo, setUserInfo] = useState({
     firstName: user?.firstName || "",
@@ -97,8 +91,14 @@ export default function ProfilePage() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
-  const [usageInfo, setUsageInfo] = useState<any>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<{
+    plan: string;
+    status?: string;
+  } | null>(null);
+  const [usageInfo, setUsageInfo] = useState<{
+    monthlyCount: number;
+    dailyCount: number;
+  } | null>(null);
 
   // Password visibility states
   const [showPasswords, setShowPasswords] = useState({
@@ -112,7 +112,7 @@ export default function ProfilePage() {
     useState<PasswordValidationResult>({
       isValid: false,
       errors: [],
-      strength: "weak" as any,
+      strength: PasswordStrength.WEAK,
       score: 0,
     });
 
@@ -213,7 +213,7 @@ export default function ProfilePage() {
       setPasswordValidation({
         isValid: false,
         errors: [],
-        strength: "weak" as "weak" | "medium" | "strong" | "very-strong",
+        strength: PasswordStrength.WEAK,
         score: 0,
       });
     }
@@ -290,7 +290,7 @@ export default function ProfilePage() {
       setPasswordValidation({
         isValid: false,
         errors: [],
-        strength: "weak",
+        strength: PasswordStrength.WEAK,
         score: 0,
       });
     } catch (error) {
@@ -363,7 +363,10 @@ export default function ProfilePage() {
               fetchSubscriptionStatus();
             } catch (error) {
               console.error("Payment verification failed:", error);
-              handleApiError(error);
+              toast.error("Payment Verification Failed", {
+                description: "Failed to verify payment. Please try again.",
+                duration: 5000,
+              });
             }
           },
           prefill: {
@@ -385,36 +388,46 @@ export default function ProfilePage() {
             window as typeof window & {
               Razorpay: new (options: unknown) => {
                 open: () => void;
-                on: (event: string, callback: () => void) => void;
+                on: (event: string, callback: (response?: { error?: { description?: string } }) => void) => void;
               };
             }
           ).Razorpay(options);
 
           // Add event listeners for debugging
-          rzp.on("payment.failed", (response: any) => {
-            console.error("Payment failed:", response.error);
-            handleApiError(
-              new Error(`Payment failed: ${response.error.description}`) as any
-            );
+          rzp.on("payment.failed", (response?: { error?: { description?: string } }) => {
+            console.error("Payment failed:", response?.error);
+            toast.error("Payment Failed", {
+              description: response?.error?.description || "Payment could not be processed",
+              duration: 5000,
+            });
           });
           setIsUpgradeModalOpen(false); // close your modal
 
           rzp.open();
         } catch (error) {
           console.error("Error opening Razorpay modal:", error);
-          handleApiError(error);
+          toast.error("Payment Error", {
+            description: "Failed to open payment modal. Please try again.",
+            duration: 5000,
+          });
         }
       };
 
       script.onerror = () => {
         console.error("Failed to load Razorpay script");
-        handleApiError(new Error("Failed to load payment gateway") as any);
+        toast.error("Payment Gateway Error", {
+          description: "Failed to load payment gateway. Please try again.",
+          duration: 5000,
+        });
       };
 
       document.body.appendChild(script);
     } catch (error) {
       console.error("Error upgrading plan:", error);
-      handleApiError(error);
+      toast.error("Upgrade Error", {
+        description: "Failed to upgrade plan. Please try again.",
+        duration: 5000,
+      });
     }
   };
 
@@ -424,7 +437,10 @@ export default function ProfilePage() {
       fetchSubscriptionStatus(); // Refresh subscription data
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      handleApiError(error);
+      toast.error("Cancellation Error", {
+        description: "Failed to cancel subscription. Please try again.",
+        duration: 5000,
+      });
     }
   };
 

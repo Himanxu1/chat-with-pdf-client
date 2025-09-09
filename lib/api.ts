@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { handleApiError, handleApiSuccess, ApiResponse } from "./errorHandler";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { handleApiError, ApiResponse } from "./errorHandler";
 
 // Extend AxiosRequestConfig to include metadata
 declare module 'axios' {
@@ -89,37 +89,37 @@ export const api = createApiInstance();
 // API methods with error handling
 export const apiMethods = {
   // GET request
-  get: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+  get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.get<ApiResponse<T>>(url, config);
     return (response.data.data || response.data) as T;
   },
 
   // POST request
-  post: async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+  post: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.post<ApiResponse<T>>(url, data, config);
     return (response.data.data || response.data) as T;
   },
 
   // PUT request
-  put: async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+  put: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.put<ApiResponse<T>>(url, data, config);
     return (response.data.data || response.data) as T;
   },
 
   // PATCH request
-  patch: async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+  patch: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.patch<ApiResponse<T>>(url, data, config);
     return (response.data.data || response.data) as T;
   },
 
   // DELETE request
-  delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.delete<ApiResponse<T>>(url, config);
     return (response.data.data || response.data) as T;
   },
 
   // Upload file
-  upload: async <T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> => {
+  upload: async <T = unknown>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> => {
     const response = await api.post<ApiResponse<T>>(url, formData, {
       ...config,
       headers: {

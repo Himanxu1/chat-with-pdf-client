@@ -1,10 +1,6 @@
 "use client";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Upload, FileText, MessageSquare, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Features } from "../components/Landing/features";
+import { FileText, MessageSquare, ShieldCheck } from "lucide-react";
 
 const ChatHome = () => {
   return (

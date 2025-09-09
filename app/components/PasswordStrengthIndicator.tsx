@@ -37,20 +37,6 @@ export function PasswordStrengthIndicator({
     }
   };
 
-  const getProgressColor = (strength: PasswordStrength): string => {
-    switch (strength) {
-      case PasswordStrength.WEAK:
-        return "bg-red-500";
-      case PasswordStrength.FAIR:
-        return "bg-orange-500";
-      case PasswordStrength.GOOD:
-        return "bg-yellow-500";
-      case PasswordStrength.STRONG:
-        return "bg-green-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   return (
     <div className="space-y-3">
@@ -104,3 +90,4 @@ export function PasswordStrengthIndicator({
     </div>
   );
 }
+

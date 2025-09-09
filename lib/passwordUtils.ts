@@ -270,3 +270,4 @@ export const getPasswordStrengthPercentage = (strength: PasswordStrength): numbe
       return 0;
   }
 };
+

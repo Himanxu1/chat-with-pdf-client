@@ -62,7 +62,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
     };
 
     fetchMessages();
-  }, [chatId]);
+  }, [chatId, BASE_URL]);
 
   const canSend = useMemo(
     () => input.trim().length > 0 && !isLoading,
@@ -132,7 +132,7 @@ const ChatInterface = ({ chatId }: { chatId: string }) => {
         });
       }, 100);
     }
-  }, [canSend, input]);
+  }, [canSend, input, BASE_URL, chatId]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {

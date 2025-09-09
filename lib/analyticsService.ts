@@ -226,7 +226,7 @@ export class AnalyticsService {
   /**
    * Export analytics data
    */
-  static async exportAnalytics(format: 'json' | 'csv' = 'json'): Promise<any> {
+  static async exportAnalytics(format: 'json' | 'csv' = 'json'): Promise<unknown> {
     try {
       const data = await apiMethods.get(`/api/v1/analytics/export?format=${format}`);
       return data;

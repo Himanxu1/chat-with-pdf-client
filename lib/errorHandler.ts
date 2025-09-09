@@ -1,14 +1,14 @@
 import { toast } from "sonner";
-import axios, { AxiosError, AxiosResponse } from "axios";
+import { AxiosError } from "axios";
 
 export interface ApiError {
   message: string;
   statusCode: number;
   error?: string;
-  details?: any;
+  details?: unknown;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   status: boolean;
@@ -20,14 +20,14 @@ export interface ApiResponse<T = any> {
  */
 export const extractErrorMessage = (error: AxiosError): string => {
   if (error.response?.data) {
-    const data = error.response.data as any;
+    const data = error.response.data as { message?: string; error?: string };
     return data.message || data.error || "An error occurred";
   }
-  
+
   if (error.message) {
     return error.message;
   }
-  
+
   return "An unexpected error occurred";
 };
 
@@ -110,12 +110,16 @@ export const handleApiError = (error: AxiosError): void => {
       break;
     case 503:
       toast.error("Service Unavailable", {
-        description: "The service is temporarily unavailable. Please try again later.",
+        description:
+          "The service is temporarily unavailable. Please try again later.",
         duration: 5000,
       });
       break;
     default:
-      if (error.code === "NETWORK_ERROR" || error.message.includes("Network Error")) {
+      if (
+        error.code === "NETWORK_ERROR" ||
+        error.message.includes("Network Error")
+      ) {
         toast.error("Network Error", {
           description: "Please check your internet connection and try again.",
           duration: 5000,
@@ -132,7 +136,10 @@ export const handleApiError = (error: AxiosError): void => {
 /**
  * Handle successful API responses
  */
-export const handleApiSuccess = (message: string, description?: string): void => {
+export const handleApiSuccess = (
+  message: string,
+  description?: string
+): void => {
   toast.success(message, {
     description,
     duration: 4000,
@@ -142,7 +149,10 @@ export const handleApiSuccess = (message: string, description?: string): void =>
 /**
  * Handle API warnings
  */
-export const handleApiWarning = (message: string, description?: string): void => {
+export const handleApiWarning = (
+  message: string,
+  description?: string
+): void => {
   toast.warning(message, {
     description,
     duration: 4000,
@@ -163,7 +173,7 @@ export const handleApiInfo = (message: string, description?: string): void => {
  * Create a standardized API error object
  */
 export const createApiError = (error: AxiosError): ApiError => {
-  const responseData = error.response?.data as any;
+  const responseData = error.response?.data as { error?: string; details?: unknown };
   return {
     message: extractErrorMessage(error),
     statusCode: extractStatusCode(error),
@@ -189,7 +199,11 @@ export const isTimeoutError = (error: AxiosError): boolean => {
 /**
  * Retry configuration for failed requests
  */
-export const getRetryConfig = (retries: number = 3): any => {
+export const getRetryConfig = (retries: number = 3): {
+  retries: number;
+  retryDelay: (retryCount: number) => number;
+  retryCondition: (error: AxiosError) => boolean;
+} => {
   return {
     retries,
     retryDelay: (retryCount: number) => {

@@ -181,7 +181,7 @@ export class ProfileService {
     monthlyPdfs: number | string;
     maxFileSize: string;
   } {
-    const limits: Record<string, any> = {
+    const limits: Record<string, { dailyPdfs: number; monthlyPdfs: number | string; maxFileSize: string }> = {
       Free: {
         dailyPdfs: 2,
         monthlyPdfs: 10,
@@ -225,3 +225,4 @@ export class ProfileService {
     return null;
   }
 }
+

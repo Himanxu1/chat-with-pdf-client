@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface AnalyticsCardProps {
@@ -30,25 +29,12 @@ export function AnalyticsCard({
   icon: Icon,
   trend,
   progress,
-  status = "info",
   className = "",
 }: AnalyticsCardProps) {
-  const getStatusColor = () => {
-    switch (status) {
-      case "success":
-        return "text-green-600";
-      case "warning":
-        return "text-orange-600";
-      case "error":
-        return "text-red-600";
-      default:
-        return "text-blue-600";
-    }
-  };
 
   const getTrendIcon = () => {
     if (!trend) return null;
-    
+
     if (trend.value > 0) {
       return <TrendingUp className="h-3 w-3 text-green-500" />;
     } else if (trend.value < 0) {
@@ -60,7 +46,7 @@ export function AnalyticsCard({
 
   const getTrendColor = () => {
     if (!trend) return "text-gray-500";
-    
+
     if (trend.value > 0) {
       return "text-green-600";
     } else if (trend.value < 0) {
@@ -83,7 +69,7 @@ export function AnalyticsCard({
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
         )}
-        
+
         {trend && (
           <div className="flex items-center gap-1 mt-2">
             {getTrendIcon()}
@@ -92,15 +78,17 @@ export function AnalyticsCard({
             </span>
           </div>
         )}
-        
+
         {progress && (
           <div className="mt-3">
             <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span>{progress.label || "Usage"}</span>
-              <span>{progress.value} / {progress.max}</span>
+              <span>
+                {progress.value} / {progress.max}
+              </span>
             </div>
-            <Progress 
-              value={(progress.value / progress.max) * 100} 
+            <Progress
+              value={(progress.value / progress.max) * 100}
               className="h-2"
             />
             <div className="text-xs text-muted-foreground mt-1">

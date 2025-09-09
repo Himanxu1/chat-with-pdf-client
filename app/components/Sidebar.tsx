@@ -42,7 +42,7 @@ export function AppSidebar() {
   };
 
   const handleAddChat = async () => {
-    if (!userProfile?.id || !token) return;
+    if (!userProfile?.id || !token || !user?.id) return;
 
     const response = await axios.post(
       `${BASE_URL}/api/v1/chat/new`,
@@ -69,7 +69,7 @@ export function AppSidebar() {
       },
     });
     setUserChats(result.data);
-  }, [userProfile, token, user?.id]);
+  }, [userProfile, token, user?.id, BASE_URL]);
 
   const handleChatClick = (id: string) => {
     router.push(`/chat/${id}`);
@@ -130,7 +130,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> {user?.username}
+                  <User2 /> {user?.firstName || user?.email}
                   <ChevronUp className="ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
