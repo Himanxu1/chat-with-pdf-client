@@ -21,3 +21,4 @@ export function MotionWrapper({ children }: MotionWrapperProps) {
     </motion.div>
   );
 }
+

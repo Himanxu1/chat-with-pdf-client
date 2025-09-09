@@ -34,6 +34,7 @@ export function AppSidebar() {
   const router = useRouter();
   const params = useParams();
   const activeChatId = params.slug as string;
+  console.log(user, "s");
 
   const handleSignOut = () => {
     logout();
@@ -69,49 +70,6 @@ export function AppSidebar() {
     });
     setUserChats(result.data);
   }, [userProfile, token, user?.id]);
-
-  const handlePayment = async () => {
-    // 1. Create order on backend
-    const res = await fetch(`${BASE_URL}/api/v1/payment/create-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 500 }),
-    });
-    const order = await res.json();
-
-    // 2. Razorpay options
-    const options: any = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: order.currency,
-      name: "My SaaS App",
-      description: "SaaS Subscription",
-      order_id: order.id,
-      handler: async function (response: any) {
-        // 3. Verify payment
-        const verifyRes = await fetch(
-          `${BASE_URL}/api/v1/payment/verify-payment`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response),
-          }
-        );
-        const verify = await verifyRes.json();
-        alert(verify.message);
-      },
-      prefill: {
-        email: user.email,
-        contact: "9876543210",
-      },
-      theme: {
-        color: "#3399cc",
-      },
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
-  };
 
   const handleChatClick = (id: string) => {
     router.push(`/chat/${id}`);
@@ -190,10 +148,10 @@ export function AppSidebar() {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={handlePayment}
+                  onClick={() => router.push("/profile")}
                   className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 rounded-md flex items-center"
                 >
-                  <CreditCard className="mr-2 h-4 w-4" /> Pay
+                  <CreditCard className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

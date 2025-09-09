@@ -2,14 +2,16 @@
 import { useRouter } from "next/navigation";
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { isBrowser } from "../components/ChatInterface";
-import axios from "axios";
+import { apiMethods } from "@/lib/api";
+import { handleApiError } from "@/lib/errorHandler";
 
 export interface AuthContextType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => voi
+  d;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,26 +37,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Example API call
-      const { data } = await axios.post(
-        `${BASE_URL}/api/v1/auth/login`,
-        {
-          email,
-          password,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const data = await apiMethods.post("/api/v1/auth/login", {
+        email,
+        password,
+      });
 
       console.log(data);
       setUser(data.user);
 
-      if (isBrowser()) {
-      }
       if (isBrowser()) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -63,6 +53,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.status) {
         router.push("/chat");
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      // Error handling is done by the API interceptor
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -70,18 +64,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/v1/auth/logout`, {
-        withCredentials: true,
-      });
+      await apiMethods.get("/api/v1/auth/logout");
 
-      console.log(res.data.message);
       setUser(null);
 
       if (isBrowser()) {
         localStorage.removeItem("user");
+        localStorage.removeItem("token");
       }
     } catch (err) {
       console.log(err);
+      // Even if logout fails on server, clear local state
+      setUser(null);
+      if (isBrowser()) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
     }
   };
 

@@ -22,7 +22,7 @@ export function Pricing() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+      <div className="mt-8 grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Free</CardTitle>
@@ -40,7 +40,7 @@ export function Pricing() {
           </CardContent>
           <CardFooter>
             <Button
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer mt-28"
               onClick={() => router.push("/login")}
             >
               Get started
@@ -50,10 +50,8 @@ export function Pricing() {
 
         <Card className="border-accent">
           <CardHeader>
-            <CardTitle>Pro</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              For students and professionals
-            </p>
+            <CardTitle>Basic</CardTitle>
+            <p className="text-sm text-muted-foreground">For students</p>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold">
@@ -71,8 +69,43 @@ export function Pricing() {
           </CardContent>
           <CardFooter>
             <Button
+              onClick={() => router.push("/login")}
               variant="outline"
-              className="w-full border-accent text-foreground hover:bg-accent/10 bg-transparent"
+              className="w-full border-accent text-foreground hover:bg-accent/10 bg-transparent mt-20 cursor-pointer"
+            >
+              Upgrade
+            </Button>
+          </CardFooter>
+        </Card>
+        <Card className="border-accent">
+          <CardHeader>
+            <CardTitle>Pro</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              For students and professionals
+            </p>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold">
+              $25
+              <span className="text-base font-normal text-muted-foreground">
+                /mo
+              </span>
+            </p>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>• 1000 chats/month</li>
+              <li>• Up to 40MB per file</li>
+              <li>• Priority processing</li>
+              <li>• Export chats</li>
+              <li>• Ad-Free</li>
+              <li>• Advanced Dashboard</li>
+              <li>• Summarization, Multi-Language</li>
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button
+              onClick={() => router.push("/login")}
+              variant="outline"
+              className="w-full border-accent text-foreground hover:bg-accent/10 bg-transparent cursor-pointer"
             >
               Upgrade
             </Button>
